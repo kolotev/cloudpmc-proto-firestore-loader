@@ -51,6 +51,6 @@ def load(click_ctx, *args, **kwargs) -> None:
 
     for json_file in kwargs.get("json_files"):
         json_file_path = AnyPath(json_file)
-        logger.info(f"processing file - {json_file_path}")
-        docid = kwargs.get("docid", json_file_path.stem)
+        docid = kwargs.get("docid", json_file_path.stem) or json_file_path.stem
+        logger.info(f"processing file - {json_file_path} with docid={docid}")
         fs_loader.upload(collection, docid, json_file_path)
