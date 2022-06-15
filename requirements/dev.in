@@ -1,0 +1,6 @@
+-r test.in
+
+black
+flake8
+isort
+tox

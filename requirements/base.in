@@ -1,0 +1,4 @@
+click
+loguru
+cloudpathlib[gs]
+google-cloud-firestore
