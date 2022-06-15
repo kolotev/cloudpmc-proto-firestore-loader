@@ -28,7 +28,10 @@ class FirestoreLoader:
             with json_file_path.open() as fd:
                 doc = json.load(fd)
                 logger.info(
-                    f"loading content: {json.dumps(doc, indent=4, sort_keys=True)}"
+                    f"loading content\n{json.dumps(doc, indent=4, sort_keys=True)}"
+                )
+                logger.info(
+                    f"into collection={collection} with docid={docid}"
                 )
                 self._db_.collection(collection).document(docid).set(doc)
         except Exception as e:
