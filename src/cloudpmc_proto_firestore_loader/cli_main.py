@@ -35,15 +35,41 @@ def cli_main(click_ctx, *args, **kwargs) -> None:
 @click.pass_context
 def load(click_ctx, *args, **kwargs) -> None:
     """
-    Load JSON_FILES into Firestore database.
-    Files may reside locally or in the cloud storage.
+    SYNOPSIS
 
-    To load local files specify absolute or relative path
-    to the files 'mypath1/myfile1.json' 'mypath2/myfile2.json' ...
+        Load JSON_FILES into Firestore database. You need to be able to
+        access the database from the location of your command line environment.
+        That is possible by either running in the cloudshell or compute instance
+        of the same project where your database is available.
 
-    To load from google cloud storage specify path as following ...
+        Files may reside locally or inside the cloud storage.
 
-    TODO: provide an example of cloud storage path
+        To load local files specify absolute or relative path
+        to the files 'mypath1/myfile1.json' 'mypath2/myfile2.json'
+
+        To load from google cloud storage specify paths as following:
+        'gs://ncbi-research-pmc.appspot.com/dump/13901.json'
+
+        Multiple files/paths are allowed in one run.
+
+        Read an "Additional info" section in README.md file if you want to
+        avoid confirming your access to Cloud API (Firestore) each time.
+
+    EXAMPLES
+
+        Loading from cloud storage:
+
+        \b
+        $ cloudpmc-proto-firestore-loader load --collection "article_instances" \\
+            gs://ncbi-research-pmc.appspot.com/dump/13901.json \\
+            gs://ncbi-research-pmc.appspot.com/dump/14901.json \\
+            ...
+
+        Loading from local file system:
+
+        \b
+        $ cloudpmc-proto-firestore-loader load --collection "article_instances" \\
+            dump/13901.json dump/14901.json ...
 
     """
     fs_loader = FirestoreLoader()
