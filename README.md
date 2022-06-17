@@ -22,6 +22,12 @@ for approval of your API requests you may setup environment as following
 export GOOGLE_APPLICATION_CREDENTIALS=~/gcp-service-account.json
 ```
 
+Another possible alternative to setup the environment is the python code
+```
+import os
+os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = '/path/to/credentials.json'
+```
+
 You should have a corresponding gcp-service-account.json file at your disposal.
 It looks like this:
 ```
