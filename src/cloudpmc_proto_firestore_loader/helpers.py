@@ -1,6 +1,7 @@
 import base64
 import pprint
-from typing import Any, Dict
+from ast import literal_eval
+from typing import Any, Dict, Union
 
 pp = pprint.PrettyPrinter(indent=4, depth=2, width=100)
 
@@ -33,7 +34,10 @@ def deep_truncate(o, max_size=56):
 
 
 def decode_b64_fields(o: Dict[str, Any]) -> Dict[str, Any]:
-    """ """
+    """
+    decode_b64_fields() decodes fields with name suffix ".b64" into bytes
+    and renames the field to the same name with no suffix.
+    """
     if isinstance(o, dict):
         for k in list(o):
             if isinstance(k, str) and k.endswith(".b64") and isinstance(o[k], str):
@@ -45,3 +49,31 @@ def decode_b64_fields(o: Dict[str, Any]) -> Dict[str, Any]:
                 o.update({k: decode_b64_fields(o[k])})
 
     return o
+
+
+def simplest_type(s: str) -> Union[str, int, float]:
+    """
+    Infer the value as python object. It is also support
+    certain strings as booleans.
+    """
+    try:
+        if s.lower() in ["y", "yes", "true", "on"]:
+            s = "True"
+        if s.lower() in ["n", "no", "false", "off"]:
+            s = "False"
+        return literal_eval(s)
+    except Exception:
+        return s
+
+
+def docstring_with_params(*args, **kwargs):
+    """
+    The decorator function to supply arguments to docstring in any
+    object, before it would be used as o.__doc__ anywhere.
+    """
+
+    def decorated(o):
+        o.__doc__ = o.__doc__.format(*args, **kwargs)
+        return o
+
+    return decorated

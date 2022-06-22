@@ -1,12 +1,11 @@
 import copy
-from typing import Union
+from typing import List
 
 import click
 from cloudpathlib import AnyPath
 
-from . import click_types
-from .firestore import FirestoreDB
-from .helpers import deep_truncate, pp
+from .firestore import FSDB_SUPPORTED_OPS, FirestoreDB
+from .helpers import deep_truncate, docstring_with_params, pp
 from .logger import CONFIG, CONFIG_DEBUG, logger
 from .timing import Timer
 
@@ -24,6 +23,7 @@ ERROR_QUERY = 2
 )
 @click.pass_context
 def cli_main(click_ctx, *args, debug=None) -> None:
+    click_ctx._debug = debug
     if debug:
         logger.configure(**CONFIG_DEBUG)
     else:
@@ -166,9 +166,17 @@ def list_collections(click_ctx, *args, **kwargs) -> None:
     $ cloudpmc-proto-firestore-loader list-collections
     """
     fdb = FirestoreDB()
+
     logger.info("List of available collections:")
-    for c in fdb.get_collections():
-        logger.info(f"\t{c.id} size={len(c.get())}")
+    with Timer("list collections"):
+        for c in fdb.get_collections():
+            logger.info(f"\t{c.id}")
+            # if size is needed the following addition could be made:
+            # size={len(c.get())}, but it is causing the # of reads equal to # of docs.
+    try:
+        c
+    except NameError:
+        logger.warning("\tNo collections found")
 
 
 @cli_main.command()
@@ -194,32 +202,9 @@ def list_collections(click_ctx, *args, **kwargs) -> None:
         "You can specify the sort order for your data using this option."
     ),
 )
-@click.argument(
-    "field",
-    nargs=1,
-    required=True,
-)
-@click.argument(
-    "op",
-    nargs=1,
-    required=True,
-    type=click.Choice(
-        [
-            "<",
-            "<=",
-            "==",
-            ">=",
-            ">",
-            "!=",
-            "array-contains",
-            "array-contains-any",
-            "in",
-            "not-in",
-        ]
-    ),
-)
-@click.argument("value", nargs=1, required=True, type=click_types.PyEvalType())
+@click.argument("conditions", nargs=-1, required=True)
 @click.pass_context
+@docstring_with_params(ops=FSDB_SUPPORTED_OPS)
 def query(click_ctx, *args, **kwargs) -> None:
     """
     find document(s) in Firestore collection.
@@ -234,32 +219,42 @@ def query(click_ctx, *args, **kwargs) -> None:
     EXAMPLES
 
     \b
-    $ cloudpmc-proto-firestore-loader query  --collection "article-instances"  pmcid '==' PMC13901
+    $ cloudpmc-proto-firestore-loader query --collection "article-instances" \\
+        'pmcid == PMC13901' 'is_oa!=False' ...
+
+    Notes:
+
+    \b
+    CONDITION consists of 3 components "FIELD OP VALUE":
+        FIELD - field name
+        OP - operator supported by Firestore DB.
+        VALUE -  value.
+
+    They can be separated by spacing and some may require wrapping into quotes
+    to avoid shell redirects.
+
+    List of supported operators: {ops}
     """
     fdb = FirestoreDB()
-    collection: str = kwargs.get("collection")
-    limit: int = kwargs.get("limit")
-    order_by: str = kwargs.get("orderby")
-    field: str = kwargs.get("field")
-    op: str = kwargs.get("op")
-    value: Union[str, int, float] = kwargs.get("value")
+    collection: str = kwargs["collection"]
+    limit: int = kwargs["limit"]
+    order_by: str = kwargs["orderby"]
+    conditions: List[str] = kwargs["conditions"]
 
-    with Timer("query & fetch"):
-        found = 0
+    with Timer("query() & fetch"):
         try:
-            docs = fdb.query(collection, limit, order_by, field, op, value)
-            for doc in docs:
-                found += 1
+            found = 0
+            for doc in fdb.query(collection, limit, order_by, conditions):
                 if doc is not None:
+                    found += 1
                     doc_for_display = deep_truncate(copy.deepcopy(doc.to_dict()), 64)
                     logger.info("\n{}", pp.pformat(doc_for_display))
         except Exception as e:
+            if click_ctx.parent._debug:
+                logger.exception(e)
             logger.error(f"{e} type(e)={type(e)}")
             click_ctx.exit(ERROR_QUERY)
 
-        if found == 0:
-            logger.error(f"No documents found in collection={collection}")
-        else:
-            logger.info(
-                f"Found {found} document(s) in collection={collection} with limit={limit}"
-            )
+        logger.info(
+            f"Found {found} document(s) in collection={collection} with limit={limit}"
+        )

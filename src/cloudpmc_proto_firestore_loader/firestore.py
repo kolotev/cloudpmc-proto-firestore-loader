@@ -1,7 +1,8 @@
 import copy
 import json
 import os
-from typing import Generator, Optional, Union
+import re
+from typing import Generator, List, Optional, Tuple, Union
 
 from cloudpathlib import AnyPath
 from google.cloud import firestore
@@ -10,7 +11,7 @@ from google.cloud.firestore_v1.collection import CollectionReference
 from google.cloud.firestore_v1.document import DocumentReference
 from google.cloud.firestore_v1.types.write import WriteResult
 
-from .helpers import decode_b64_fields, deep_truncate, pp
+from .helpers import decode_b64_fields, deep_truncate, pp, simplest_type
 from .logger import logger
 from .timing import Timer
 
@@ -32,6 +33,20 @@ from .timing import Timer
 GA_CREDENTIALS = AnyPath("/").home() / ".service-account.json"
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(GA_CREDENTIALS)
 os.environ["no_proxy"] = "localhost,127.0.0.1/8"
+
+# Firestore supported conditional operators to query
+FSDB_SUPPORTED_OPS = [
+    "<",
+    "<=",
+    "==",
+    ">=",
+    ">",
+    "!=",
+    "array-contains",
+    "array-contains-any",
+    "in",
+    "not-in",
+]
 
 
 class FirestoreDB:
@@ -77,23 +92,38 @@ class FirestoreDB:
 
     @Timer()
     def query(
-        self,
-        collection: str,
-        limit: int,
-        order_by: str,
-        field: str,
-        op: str,
-        value: Union[str, int, float],
+        self, collection: str, limit: int, order_by: str, conditions: List[str]
     ) -> Generator[DocumentSnapshot, None, None]:
         query = self._db_.collection(collection).limit(limit)
         query = query.limit(limit)
-        query = query.where(field, op, value)
+        for condition in conditions:
+            field, op, value = self._parse_condition(condition)
+            query = query.where(field, op, value)
         if order_by:
             query = query.order_by(order_by)
 
-        results = query.stream()
+        return query.stream()
 
-        return results
+    @staticmethod
+    def _parse_condition(condition: str) -> Tuple[str, str, Union[str, int, float]]:
+        re_pattern = r"^(.*?)(" f"{'|'.join(FSDB_SUPPORTED_OPS)}" r")(.*?)$"
+        re_search = re.search(re_pattern, condition)
+        if re_search:
+            field, op, value = re_search.groups()
+        else:
+            raise ValueError(f"condition `{condition}` is not valid.")
+
+        if field == "":
+            raise ValueError(f"field can not be empty in condition `{condition}`.")
+        if op not in FSDB_SUPPORTED_OPS:
+            raise ValueError(f"unknown operator {op} in condition `{condition}`.")
+        if value == "":
+            raise ValueError(f"value can not be empty in condition `{condition}`.")
+
+        value = value.strip()
+        value = simplest_type(value)
+        field = field.strip()
+        return (field, op, value)
 
 
 # TODO: remove following code later.
