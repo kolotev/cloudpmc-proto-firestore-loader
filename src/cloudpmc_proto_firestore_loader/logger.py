@@ -19,7 +19,7 @@ CONFIG_DEBUG = {
             "sink": sys.stderr,
             "format": (
                 "{time:YYYY-MM-DDTHH:mm:ss.SSS} - <level>{message}</level> "
-                "<{file}:{line}> [elapsed={elapsed}]"
+                "<{file}:{line}> [since_start={elapsed}]"
             ),
             "colorize": True,
             "level": "DEBUG",
