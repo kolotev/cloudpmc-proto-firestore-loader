@@ -1,7 +1,8 @@
 from ast import literal_eval
 from typing import Any, Optional
 
-from click.types import Context, Parameter, ParamType
+from click.core import Context, Parameter
+from click.types import ParamType
 
 
 class PyEvalType(ParamType):
