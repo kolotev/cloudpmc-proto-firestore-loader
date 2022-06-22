@@ -1,6 +1,8 @@
 import base64
-from doctest import ELLIPSIS
-from typing import Dict, Any
+import pprint
+from typing import Any, Dict
+
+pp = pprint.PrettyPrinter(indent=4, depth=2, width=100)
 
 
 def bytes_to_str(v):

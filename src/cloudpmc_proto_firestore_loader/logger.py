@@ -26,3 +26,5 @@ CONFIG_DEBUG = {
         },
     ]
 }
+
+__all__ = ["logger"]

@@ -1,7 +1,7 @@
 from ast import literal_eval
 from typing import Any, Optional
 
-from click.types import ParamType
+from click.types import Context, Parameter, ParamType
 
 
 class PyEvalType(ParamType):
@@ -10,8 +10,8 @@ class PyEvalType(ParamType):
     def convert(
         self,
         value: Any,
-        param: Optional["Parameter"],
-        ctx: Optional["Context"],
+        param: Optional[Parameter],
+        ctx: Optional[Context],
     ) -> Any:
 
         val = PyEvalType._simplest_type(value)
@@ -28,5 +28,5 @@ class PyEvalType(ParamType):
             if s.lower() in ["n", "no", "false", "off"]:
                 s = "False"
             return literal_eval(s)
-        except:
+        except Exception:
             return s
