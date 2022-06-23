@@ -1,9 +1,11 @@
 import base64
+import io
 import pprint
 from ast import literal_eval
-from typing import Any, Dict, Union
+import zstandard as zstd
 
 pprinter = pprint.PrettyPrinter(indent=4, depth=2, width=100)
+cctx = zstd.ZstdCompressor(level=10)
 
 
 def bytes_to_str(v):
@@ -48,7 +50,18 @@ def decode_b64_fields(o: Dict[str, Any]) -> Dict[str, Any]:
             elif isinstance(o[k], dict):
                 o.update({k: decode_b64_fields(o[k])})
 
-    return o
+def decode_b64_compress_fields(o: Dict[str, Any], fields: List[str]) -> None:
+    for f in fields:
+        v = o.get(f)
+        if v is not None:
+            f_zstd = f + "_zstd"
+            v = base64.b64decode(v)
+            data = io.BytesIO(b"")
+            with cctx.stream_writer(data, closefd=False) as s_writer:
+                s_writer.write(v)
+            data.seek(0)
+            v_zstd = data.read()
+            o.update({f_zstd: v_zstd, f: v})
 
 
 def simplest_type(s: str) -> Union[str, int, float]:
