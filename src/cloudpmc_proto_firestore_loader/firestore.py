@@ -41,7 +41,7 @@ os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = str(GA_CREDENTIALS)
 os.environ["no_proxy"] = "localhost,127.0.0.1/8"
 
 # Firestore supported conditional operators to query
-FSDB_SUPPORTED_OPS = [
+FS_DB_SUPPORTED_OPS = [
     "<",
     "<=",
     "==",
@@ -67,9 +67,8 @@ class FirestoreDB:
     def upload_document(
         self, collection: str, doc_id: str, json_file_path: AnyPath
     ) -> Optional[WriteResult]:
-        try:
-            with json_file_path.open() as fd:
-                doc = json.load(fd)
+        with json_file_path.open() as fd:
+            doc = json.load(fd)
 
             # decode fields with .b64 suffix in the name of properties
             decode_b64_fields(doc)
@@ -78,9 +77,9 @@ class FirestoreDB:
                 decode_b64_compress_fields(doc, ["header_xml"])
             doc_display = pprinter.pformat(deep_truncate(copy.deepcopy(doc)))
             logger.info(f"loading content\n{doc_display}")
-                logger.info(f"into collection={collection} with doc_id={doc_id}")
+            logger.info(f"into collection={collection} with doc_id={doc_id}")
 
-                # load the document into database
+            # load the document into database
             return self._db_.collection(collection).document(doc_id).set(doc)
 
     @Timer()
@@ -110,7 +109,7 @@ class FirestoreDB:
 
     @staticmethod
     def _parse_condition(condition: str) -> Tuple[str, str, Union[str, int, float]]:
-        re_pattern = r"^(.*?)(" f"{'|'.join(FSDB_SUPPORTED_OPS)}" r")(.*?)$"
+        re_pattern = r"^(.*?)(" f"{'|'.join(FS_DB_SUPPORTED_OPS)}" r")(.*?)$"
         re_search = re.search(re_pattern, condition)
         if re_search:
             field, op, value = re_search.groups()
@@ -119,7 +118,7 @@ class FirestoreDB:
 
         if field == "":
             raise ValueError(f"field can not be empty in condition `{condition}`.")
-        if op not in FSDB_SUPPORTED_OPS:
+        if op not in FS_DB_SUPPORTED_OPS:
             raise ValueError(f"unknown operator {op} in condition `{condition}`.")
         if value == "":
             raise ValueError(f"value can not be empty in condition `{condition}`.")
