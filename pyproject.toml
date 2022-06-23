@@ -1,0 +1,7 @@
+[tool.black]
+line-length = 99
+include = '/(?:tests|src)/.*\.pyi?$'
+target-version = ['py39']
+
+[tool.isort]
+profile = "black"
