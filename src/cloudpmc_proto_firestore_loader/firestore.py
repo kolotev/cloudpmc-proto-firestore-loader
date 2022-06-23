@@ -71,19 +71,17 @@ class FirestoreDB:
             with json_file_path.open() as fd:
                 doc = json.load(fd)
 
-                # display truncated base64 decoded  document
-                doc_decoded = decode_b64_fields(doc)
-                doc_for_display = pp.pformat(deep_truncate(copy.deepcopy(doc_decoded)))
-                logger.info(f"loading content\n{doc_for_display}")
+            # decode fields with .b64 suffix in the name of properties
+            decode_b64_fields(doc)
+            # decode header_xml for article_instances collection
+            if collection == "article_instances" and doc.get("header_xml"):
+                decode_b64_compress_fields(doc, ["header_xml"])
+            doc_display = pprinter.pformat(deep_truncate(copy.deepcopy(doc)))
+            logger.info(f"loading content\n{doc_display}")
                 logger.info(f"into collection={collection} with doc_id={doc_id}")
 
                 # load the document into database
-                return (
-                    self._db_.collection(collection).document(doc_id).set(doc_decoded)
-                )
-
-        except Exception as e:
-            logger.error(str(e))
+            return self._db_.collection(collection).document(doc_id).set(doc)
 
     @Timer()
     def get_document(self, collection: str, doc_id: str) -> Optional[DocumentSnapshot]:
