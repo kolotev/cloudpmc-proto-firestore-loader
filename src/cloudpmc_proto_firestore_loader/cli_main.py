@@ -219,7 +219,7 @@ def query(click_ctx, *args, **kwargs) -> None:
     EXAMPLES
 
     \b
-    $ cloudpmc-proto-firestore-loader query --collection "article-instances" \\
+    $ cloudpmc-proto-firestore-loader query --collection "article_instances" \\
         'pmcid == PMC13901' 'is_oa!=False' ...
 
     Notes:
