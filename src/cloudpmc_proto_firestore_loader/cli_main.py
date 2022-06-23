@@ -4,7 +4,7 @@ from typing import List
 import click
 from cloudpathlib import AnyPath
 
-from .firestore import FSDB_SUPPORTED_OPS, FirestoreDB
+from .firestore import FS_DB_SUPPORTED_OPS, FirestoreDB
 from .helpers import deep_truncate, docstring_with_params, pprinter
 from .logger import CONFIG, CONFIG_DEBUG, logger
 from .timing import Timer
@@ -204,7 +204,7 @@ def list_collections(click_ctx, *args, **kwargs) -> None:
 )
 @click.argument("conditions", nargs=-1, required=True)
 @click.pass_context
-@docstring_with_params(ops=FSDB_SUPPORTED_OPS)
+@docstring_with_params(ops=FS_DB_SUPPORTED_OPS)
 def query(click_ctx, *args, **kwargs) -> None:
     """
     find document(s) in Firestore collection.
