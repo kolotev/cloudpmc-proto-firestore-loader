@@ -92,14 +92,14 @@ def load(click_ctx, *args, **kwargs) -> None:
 
     """
     try:
-    fdb = FirestoreDB()
-    collection = kwargs.get("collection")
+        fdb = FirestoreDB()
+        collection = kwargs.get("collection")
 
-    for json_file in kwargs.get("json_files"):
-        json_file_path = AnyPath(json_file)
-        doc_id = kwargs.get("doc_id", json_file_path.stem) or json_file_path.stem
-        logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
-        fdb.upload_document(collection, doc_id, json_file_path)
+        for json_file in kwargs.get("json_files"):
+            json_file_path = AnyPath(json_file)
+            doc_id = kwargs.get("doc_id", json_file_path.stem) or json_file_path.stem
+            logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
+            fdb.upload_document(collection, doc_id, json_file_path)
     except Exception as e:
         if click_ctx.parent._debug:
             logger.exception(e)
@@ -262,6 +262,4 @@ def query(click_ctx, *args, **kwargs) -> None:
             logger.error(f"{e} type(e)={type(e)}")
             click_ctx.exit(ERROR_QUERY)
 
-        logger.info(
-            f"Found {found} document(s) in collection={collection} with limit={limit}"
-        )
+        logger.info(f"Found {found} document(s) in collection={collection} with limit={limit}")
