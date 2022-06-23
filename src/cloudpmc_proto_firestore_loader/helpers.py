@@ -2,6 +2,8 @@ import base64
 import io
 import pprint
 from ast import literal_eval
+from typing import Any, Dict, List, Union
+
 import zstandard as zstd
 
 pprinter = pprint.PrettyPrinter(indent=4, depth=2, width=100)
@@ -35,7 +37,7 @@ def deep_truncate(o, max_size=56):
     return o
 
 
-def decode_b64_fields(o: Dict[str, Any]) -> Dict[str, Any]:
+def decode_b64_fields(o: Dict[str, Any]) -> None:
     """
     decode_b64_fields() decodes fields with name suffix ".b64" into bytes
     and renames the field to the same name with no suffix.
@@ -49,6 +51,7 @@ def decode_b64_fields(o: Dict[str, Any]) -> Dict[str, Any]:
                 o.update({new_k: new_v})
             elif isinstance(o[k], dict):
                 o.update({k: decode_b64_fields(o[k])})
+
 
 def decode_b64_compress_fields(o: Dict[str, Any], fields: List[str]) -> None:
     for f in fields:
