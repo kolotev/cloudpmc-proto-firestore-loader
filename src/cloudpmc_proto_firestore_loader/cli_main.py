@@ -5,7 +5,7 @@ import click
 from cloudpathlib import AnyPath
 
 from .firestore import FSDB_SUPPORTED_OPS, FirestoreDB
-from .helpers import deep_truncate, docstring_with_params, pp
+from .helpers import deep_truncate, docstring_with_params, pprinter
 from .logger import CONFIG, CONFIG_DEBUG, logger
 from .timing import Timer
 
@@ -136,7 +136,7 @@ def get(click_ctx, *args, **kwargs) -> None:
         logger.debug(doc)
         if doc is not None:
             doc_for_display = deep_truncate(copy.deepcopy(doc.to_dict()), 64)
-            logger.info("\n{}", pp.pformat(doc_for_display))
+            logger.info("\n{}", pprinter.pformat(doc_for_display))
         else:
             logger.error(
                 f"No document with doc_id={doc_id} in collection={collection}, "
@@ -248,7 +248,7 @@ def query(click_ctx, *args, **kwargs) -> None:
                 if doc is not None:
                     found += 1
                     doc_for_display = deep_truncate(copy.deepcopy(doc.to_dict()), 64)
-                    logger.info("\n{}", pp.pformat(doc_for_display))
+                    logger.info("\n{}", pprinter.pformat(doc_for_display))
         except Exception as e:
             if click_ctx.parent._debug:
                 logger.exception(e)

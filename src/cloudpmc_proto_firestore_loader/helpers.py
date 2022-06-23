@@ -3,7 +3,7 @@ import pprint
 from ast import literal_eval
 from typing import Any, Dict, Union
 
-pp = pprint.PrettyPrinter(indent=4, depth=2, width=100)
+pprinter = pprint.PrettyPrinter(indent=4, depth=2, width=100)
 
 
 def bytes_to_str(v):

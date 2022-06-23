@@ -11,7 +11,13 @@ from google.cloud.firestore_v1.collection import CollectionReference
 from google.cloud.firestore_v1.document import DocumentReference
 from google.cloud.firestore_v1.types.write import WriteResult
 
-from .helpers import decode_b64_fields, deep_truncate, pp, simplest_type
+from .helpers import (
+    decode_b64_compress_fields,
+    decode_b64_fields,
+    deep_truncate,
+    pprinter,
+    simplest_type,
+)
 from .logger import logger
 from .timing import Timer
 
