@@ -83,10 +83,16 @@ class FirestoreDB:
             return self._db_.collection(collection).document(doc_id).set(doc)
 
     @Timer()
-    def get_document(self, collection: str, doc_id: str) -> Optional[DocumentSnapshot]:
+    def get_document(self, collection: str, doc_id: str) -> Optional[Dict[str, Any]]:
         doc_ref: DocumentReference = self._db_.collection(collection).document(doc_id)
         doc: DocumentSnapshot = doc_ref.get()
-        return doc if doc.exists else None
+        doc_dict = None
+        if doc.exists:
+            doc_dict = doc.to_dict()
+            if collection == "article_instances":
+                zdecompress_b64_encode_fields(doc_dict, ["header_xml_zstd"])
+
+        return doc_dict
 
     @Timer()
     def get_collections(self) -> Generator[CollectionReference, None, None]:

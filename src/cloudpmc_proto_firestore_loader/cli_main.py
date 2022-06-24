@@ -137,6 +137,8 @@ def get(click_ctx, *args, **kwargs) -> None:
         info = f"retrieving  document from collection={collection} with doc_id={doc_id}"
         logger.info(info)
 
+        doc_dict = fdb.get_document(collection, doc_id)
+        if doc_dict is not None:
             log_debug_doc_dict(click_ctx, doc_dict)
             json_file = f"{doc_id}.json"
             with open(json_file, "w", encoding="utf-8") as f:
