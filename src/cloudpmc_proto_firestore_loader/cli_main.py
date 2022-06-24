@@ -138,6 +138,12 @@ def get(click_ctx, *args, **kwargs) -> None:
         logger.info(info)
 
             log_debug_doc_dict(click_ctx, doc_dict)
+            json_file = f"{doc_id}.json"
+            with open(json_file, "w", encoding="utf-8") as f:
+                json.dump(doc_dict, f, ensure_ascii=False, indent=4, sort_keys=True)
+
+            logger.info(f"document with doc_id={doc_id} was written into {json_file} file.")
+
         else:
             logger.error(
                 f"No document with doc_id={doc_id} in collection={collection}, "
@@ -250,6 +256,12 @@ def query(click_ctx, *args, **kwargs) -> None:
                 if doc is not None:
                     found += 1
             log_debug_doc_dict(click_ctx, doc_dict)
+            json_file = f"{doc_id}.json"
+            with open(json_file, "w", encoding="utf-8") as f:
+                json.dump(doc_dict, f, ensure_ascii=False, indent=4, sort_keys=True)
+            logger.info(f"document with doc_id={doc_id} was written into {json_file} file.")
+        logger.info(f"Found {found} document(s) in collection={collection} with limit={limit}")
+
 @cli_try_except(ERROR_LIST_COLLECTIONS)
 def list_collections(click_ctx, *args, **kwargs) -> None:
 
