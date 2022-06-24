@@ -1,8 +1,10 @@
 import base64
 import pprint
 from ast import literal_eval
+from functools import wraps
 from typing import Any, Dict, List, Union
 from . import zstd
+from .logger import logger
 
 pprinter = pprint.PrettyPrinter(indent=4, depth=2, width=100)
 
@@ -86,3 +88,25 @@ def docstring_with_params(*args, **kwargs):
         return o
 
     return decorated
+
+
+def cli_try_except(error_code):
+    """
+    The decorator function to decorate cli commands with try except block.
+    """
+
+    def decorator(func):
+        @wraps(func)
+        def decorated(click_ctx, *args, **kwargs):
+            try:
+                return func(click_ctx, *args, **kwargs)
+            except Exception as e:
+                if click_ctx.parent._debug:
+                    logger.exception(e)
+                logger.error(f"{e} type(e)={type(e)}")
+                click_ctx.exit(error_code)
+
+        return decorated
+
+    return decorator
+

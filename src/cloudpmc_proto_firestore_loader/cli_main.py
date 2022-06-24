@@ -5,13 +5,15 @@ import click
 from cloudpathlib import AnyPath
 
 from .firestore import FS_DB_SUPPORTED_OPS, FirestoreDB
-from .helpers import deep_truncate, docstring_with_params, pprinter
+from .helpers import cli_try_except, docstring_with_params, log_debug_doc_dict
 from .logger import CONFIG, CONFIG_DEBUG, logger
 from .timing import Timer
 
 ERROR_NO_DOC = 1
 ERROR_QUERY = 2
 ERROR_LOAD = 3
+ERROR_LIST_COLLECTIONS = 4
+ERROR_GET = 5
 
 
 @click.group()
@@ -50,6 +52,7 @@ def cli_main(click_ctx, *args, debug=None) -> None:
     required=True,
 )
 @click.pass_context
+@cli_try_except(ERROR_LOAD)
 def load(click_ctx, *args, **kwargs) -> None:
     """
     load JSON_FILES into Firestore database.
@@ -91,7 +94,6 @@ def load(click_ctx, *args, **kwargs) -> None:
         dump/13901.json dump/14901.json ...
 
     """
-    try:
         fdb = FirestoreDB()
         collection = kwargs.get("collection")
 
@@ -100,11 +102,6 @@ def load(click_ctx, *args, **kwargs) -> None:
             doc_id = kwargs.get("doc_id", json_file_path.stem) or json_file_path.stem
             logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
             fdb.upload_document(collection, doc_id, json_file_path)
-    except Exception as e:
-        if click_ctx.parent._debug:
-            logger.exception(e)
-        logger.error(f"{e} type(e)={type(e)}")
-        click_ctx.exit(ERROR_LOAD)
 
 
 @cli_main.command()
@@ -120,6 +117,7 @@ def load(click_ctx, *args, **kwargs) -> None:
     required=True,
 )
 @click.pass_context
+@cli_try_except(ERROR_GET)
 def get(click_ctx, *args, **kwargs) -> None:
     """
     get document from Firestore collection.
@@ -211,6 +209,7 @@ def list_collections(click_ctx, *args, **kwargs) -> None:
 )
 @click.argument("conditions", nargs=-1, required=True)
 @click.pass_context
+@cli_try_except(ERROR_QUERY)
 @docstring_with_params(ops=FS_DB_SUPPORTED_OPS)
 def query(click_ctx, *args, **kwargs) -> None:
     """
@@ -254,12 +253,7 @@ def query(click_ctx, *args, **kwargs) -> None:
             for doc in fdb.query(collection, limit, order_by, conditions):
                 if doc is not None:
                     found += 1
-                    doc_for_display = deep_truncate(copy.deepcopy(doc.to_dict()), 64)
-                    logger.info("\n{}", pprinter.pformat(doc_for_display))
-        except Exception as e:
-            if click_ctx.parent._debug:
-                logger.exception(e)
-            logger.error(f"{e} type(e)={type(e)}")
-            click_ctx.exit(ERROR_QUERY)
+@cli_try_except(ERROR_LIST_COLLECTIONS)
+def list_collections(click_ctx, *args, **kwargs) -> None:
 
         logger.info(f"Found {found} document(s) in collection={collection} with limit={limit}")
