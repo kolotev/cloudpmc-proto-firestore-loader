@@ -2,7 +2,7 @@ import copy
 import json
 import os
 import re
-from typing import Generator, List, Optional, Tuple, Union
+from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
 from cloudpathlib import AnyPath
 from google.cloud import firestore
@@ -12,11 +12,12 @@ from google.cloud.firestore_v1.document import DocumentReference
 from google.cloud.firestore_v1.types.write import WriteResult
 
 from .helpers import (
-    decode_b64_compress_fields,
     decode_b64_fields,
+    decode_b64_zcompress_fields,
     deep_truncate,
     pprinter,
     simplest_type,
+    zdecompress_b64_encode_fields,
 )
 from .logger import logger
 from .timing import Timer
