@@ -137,11 +137,7 @@ def get(click_ctx, *args, **kwargs) -> None:
         info = f"retrieving  document from collection={collection} with doc_id={doc_id}"
         logger.info(info)
 
-        doc = fdb.get_document(collection, doc_id)
-        logger.debug(doc)
-        if doc is not None:
-            doc_for_display = deep_truncate(copy.deepcopy(doc.to_dict()), 64)
-            logger.info("\n{}", pprinter.pformat(doc_for_display))
+            log_debug_doc_dict(click_ctx, doc_dict)
         else:
             logger.error(
                 f"No document with doc_id={doc_id} in collection={collection}, "
@@ -253,6 +249,7 @@ def query(click_ctx, *args, **kwargs) -> None:
             for doc in fdb.query(collection, limit, order_by, conditions):
                 if doc is not None:
                     found += 1
+            log_debug_doc_dict(click_ctx, doc_dict)
 @cli_try_except(ERROR_LIST_COLLECTIONS)
 def list_collections(click_ctx, *args, **kwargs) -> None:
 
