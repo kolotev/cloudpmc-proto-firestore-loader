@@ -11,9 +11,44 @@ $ pip install -e .
 ```
 
 ## Running
+
+Currently supported list of commands:
 ```
-$ cloudpmc-proto-firestore-loader load --collection "article_instances" 15901.json
+$ cloudpmc-proto-firestore-loader  --help
+Usage: cloudpmc-proto-firestore-loader [OPTIONS] COMMAND [ARGS]...
+
+Options:
+  --debug  Debug this application.
+  --help   Show this message and exit.
+
+Commands:
+  get               get document from Firestore collection.
+  list-collections  get list of top-level collections from Firestore...
+  load              load JSON_FILES into Firestore database.
+  query             find document(s) in Firestore collection.
 ```
+
+Load article instance(s):
+```
+$ cloudpmc-proto-firestore-loader load --collection "article_instances" 13901.json 14901.json ...
+```
+
+Get article instance(s):
+```
+$ cloudpmc-proto-firestore-loader get --collection "article_instances"  13901 14901 ...
+```
+Then you can see the retrieved documents in files 13901.json, 14901.json in local folder.
+
+List collections:
+```
+$ cloudpmc-proto-firestore-loader list-collections
+```
+
+Query documents from collection
+```
+$ cloudpmc-proto-firestore-loader query --collection "article_instances" 'pmcid == PMC13901' 'is_oa!=False' ...
+```
+The would be performed a logical AND between provided CONDITIONS (arguments).
 
 ## Additional info
 If you want to be able to run this package's script without being asked 
