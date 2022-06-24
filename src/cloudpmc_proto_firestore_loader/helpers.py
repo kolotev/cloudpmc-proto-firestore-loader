@@ -59,7 +59,13 @@ def decode_b64_compress_fields(o: Dict[str, Any], fields: List[str]) -> None:
             v = base64.b64decode(v)
             v_zstd = zstd.compress(v)
             f_zstd = f + "_zstd"
-            o.update({f_zstd: v_zstd})
+def zdecompress_b64_encode_fields(d: Dict[str, Any], fields: List[str]) -> None:
+    for f in fields:
+        if f.endswith("_zstd"):
+            v = d.pop(f)
+            if v is not None:
+                v = zstd.decompress(v)
+                d[f.strip("_zstd")] = base64.b64encode(v).decode("ascii")
 
 
 def simplest_type(s: str) -> Union[str, int, float]:
