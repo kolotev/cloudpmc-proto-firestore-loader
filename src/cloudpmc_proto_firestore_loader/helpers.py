@@ -18,7 +18,7 @@ def bytes_to_str(v):
 ELLIPSIS_STR = " ..."
 
 
-def deep_truncate(d: Dict[str, Any], max_size=56) -> None:
+def deep_truncate(d: Dict[str, Any], max_size=56) -> Dict[str, Any]:
     """
     deep_truncate() helper function iterates over all elements
     of dictionary and truncate values to requested size
