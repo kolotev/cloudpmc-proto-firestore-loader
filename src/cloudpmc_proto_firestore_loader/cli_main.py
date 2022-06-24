@@ -4,7 +4,12 @@ import click
 from cloudpathlib import AnyPath
 
 from . import firestore
-from .helpers import cli_try_except, docstring_with_params, log_debug_doc_dict
+from .helpers import (
+    cli_try_except,
+    docstring_with_params,
+    log_debug_doc_dict,
+    save_json_doc_dict,
+)
 from .logger import CONFIG, CONFIG_DEBUG, logger
 from .timing import Timer
 
