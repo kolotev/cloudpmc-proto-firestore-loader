@@ -102,16 +102,22 @@ class FirestoreDB:
     @Timer()
     def query(
         self, collection: str, limit: int, order_by: str, conditions: List[str]
-    ) -> Generator[DocumentSnapshot, None, None]:
+    ) -> Generator[Tuple[str, Dict[str, Any]], None, None]:
         query = self._db_.collection(collection).limit(limit)
         query = query.limit(limit)
+
         for condition in conditions:
             field, op, value = self._parse_condition(condition)
             query = query.where(field, op, value)
+
         if order_by:
             query = query.order_by(order_by)
 
-        return query.stream()
+        for doc in query.stream():
+            doc_dict = doc.to_dict()
+            if collection == "article_instances":
+                zdecompress_b64_encode_fields(doc_dict, ["header_xml_zstd"])
+            yield doc.id, doc_dict
 
     @staticmethod
     def _parse_condition(condition: str) -> Tuple[str, str, Union[str, int, float]]:
