@@ -26,7 +26,7 @@ ERROR_GET = 5
 )
 @click.pass_context
 def cli_main(click_ctx, *args, debug=None) -> None:
-    click_ctx._debug = debug
+    click_ctx.arg_debug = debug
     if debug:
         logger.configure(**CONFIG_DEBUG)
     else:

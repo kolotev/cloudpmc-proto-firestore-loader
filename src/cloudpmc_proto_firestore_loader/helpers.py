@@ -123,7 +123,7 @@ def cli_try_except(error_code):
 
 
 def log_debug_doc_dict(click_ctx, doc_dict: Dict[str, Any]) -> None:
-    if click_ctx.parent._debug:
+    if click_ctx.parent.arg_debug:
         doc_for_display = deep_truncate(copy.deepcopy(doc_dict), 64)
         logger.debug("\n{}", pprinter.pformat(doc_for_display))
 
