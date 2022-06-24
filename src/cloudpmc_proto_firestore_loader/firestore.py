@@ -92,8 +92,7 @@ class _FirestoreDB:
         doc_dict = None
         if doc.exists:
             doc_dict = doc.to_dict()
-            if collection == "article_instances":
-                zdecompress_b64_encode_fields(doc_dict, ["header_xml_zstd"])
+            zdecompress_b64_encode_fields(doc_dict, ["header_xml_zstd"])
 
         return doc_dict
 
@@ -117,8 +116,7 @@ class _FirestoreDB:
 
         for doc in query.stream():
             doc_dict = doc.to_dict()
-            if collection == "article_instances":
-                zdecompress_b64_encode_fields(doc_dict, ["header_xml_zstd"])
+            zdecompress_b64_encode_fields(doc_dict, ["header_xml_zstd"])
             yield doc.id, doc_dict
 
     @staticmethod
