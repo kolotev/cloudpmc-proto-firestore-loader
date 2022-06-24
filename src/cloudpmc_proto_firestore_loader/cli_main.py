@@ -1,4 +1,4 @@
-import copy
+import json
 from typing import List
 
 import click
@@ -67,7 +67,7 @@ def load(click_ctx, *args, **kwargs) -> None:
     Files may reside locally or inside the cloud storage.
 
     To load local files specify absolute or relative path
-    to the files 'mypath1/myfile1.json' 'mypath2/myfile2.json'
+    to the files 'my_path1/myfile1.json' 'my_path2/myfile2.json'
 
     To load from google cloud storage specify paths as following:
     'gs://ncbi-research-pmc.appspot.com/dump/13901.json'
@@ -94,14 +94,14 @@ def load(click_ctx, *args, **kwargs) -> None:
         dump/13901.json dump/14901.json ...
 
     """
-        fdb = FirestoreDB()
-        collection = kwargs.get("collection")
+    fdb = FirestoreDB()
+    collection = kwargs.get("collection")
 
-        for json_file in kwargs.get("json_files"):
-            json_file_path = AnyPath(json_file)
-            doc_id = kwargs.get("doc_id", json_file_path.stem) or json_file_path.stem
-            logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
-            fdb.upload_document(collection, doc_id, json_file_path)
+    for json_file in kwargs.get("json_files"):
+        json_file_path = AnyPath(json_file)
+        doc_id = kwargs.get("doc_id", json_file_path.stem) or json_file_path.stem
+        logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
+        fdb.upload_document(collection, doc_id, json_file_path)
 
 
 @cli_main.command()
@@ -129,7 +129,7 @@ def get(click_ctx, *args, **kwargs) -> None:
     EXAMPLES
 
     \b
-    $ cloudpmc-proto-firestore-loader get --collection "article-instances"  13901 14901 ...
+    $ cloudpmc-proto-firestore-loader get --collection "article_instances"  13901 14901 ...
     """
     fdb = FirestoreDB()
     collection = kwargs.get("collection")
@@ -152,40 +152,6 @@ def get(click_ctx, *args, **kwargs) -> None:
                 f"check the collection name or doc_ids argument."
             )
             click_ctx.exit(ERROR_NO_DOC)
-
-
-@cli_main.command()
-@click.pass_context
-def list_collections(click_ctx, *args, **kwargs) -> None:
-    """
-    get list of top-level collections from Firestore database.
-
-    SYNOPSIS
-
-    Get list of top-level collections from Firestore database.
-
-    WARNING
-
-    It is not known if it causing the read operation on all documents
-    of the collection yet.
-
-    EXAMPLES
-
-    \b
-    $ cloudpmc-proto-firestore-loader list-collections
-    """
-    fdb = FirestoreDB()
-
-    logger.info("List of available collections:")
-    with Timer("list collections"):
-        for c in fdb.get_collections():
-            logger.info(f"\t{c.id}")
-            # if size is needed the following addition could be made:
-            # size={len(c.get())}, but it is causing the # of reads equal to # of docs.
-    try:
-        c
-    except NameError:
-        logger.warning("\tNo collections found")
 
 
 @cli_main.command()
@@ -252,11 +218,9 @@ def query(click_ctx, *args, **kwargs) -> None:
     conditions: List[str] = kwargs["conditions"]
 
     with Timer("query() & fetch"):
-        try:
-            found = 0
-            for doc in fdb.query(collection, limit, order_by, conditions):
-                if doc is not None:
-                    found += 1
+        found = 0
+        for doc_id, doc_dict in fdb.query(collection, limit, order_by, conditions):
+            found += 1
             log_debug_doc_dict(click_ctx, doc_dict)
             json_file = f"{doc_id}.json"
             with open(json_file, "w", encoding="utf-8") as f:
@@ -264,7 +228,37 @@ def query(click_ctx, *args, **kwargs) -> None:
             logger.info(f"document with doc_id={doc_id} was written into {json_file} file.")
         logger.info(f"Found {found} document(s) in collection={collection} with limit={limit}")
 
+
+@cli_main.command()
+@click.pass_context
 @cli_try_except(ERROR_LIST_COLLECTIONS)
 def list_collections(click_ctx, *args, **kwargs) -> None:
+    """
+    get list of top-level collections from Firestore database.
 
-        logger.info(f"Found {found} document(s) in collection={collection} with limit={limit}")
+    SYNOPSIS
+
+    Get list of top-level collections from Firestore database.
+
+    WARNING
+
+    It is not known if it causing the read operation on all documents
+    of the collection yet.
+
+    EXAMPLES
+
+    \b
+    $ cloudpmc-proto-firestore-loader list-collections
+    """
+    fdb = FirestoreDB()
+
+    logger.info("List of available collections:")
+    with Timer("list collections"):
+        for c in fdb.get_collections():
+            logger.info(f"\t{c.id}")
+            # if size is needed the following addition could be made:
+            # size={len(c.get())}, but it is causing the # of reads equal to # of docs.
+    try:
+        c
+    except NameError:
+        logger.warning("\tNo collections found")
