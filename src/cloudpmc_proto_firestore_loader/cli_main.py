@@ -4,7 +4,7 @@ from typing import List
 import click
 from cloudpathlib import AnyPath
 
-from .firestore import FS_DB_SUPPORTED_OPS, FirestoreDB
+from . import firestore
 from .helpers import cli_try_except, docstring_with_params, log_debug_doc_dict
 from .logger import CONFIG, CONFIG_DEBUG, logger
 from .timing import Timer
@@ -94,14 +94,13 @@ def load(click_ctx, *args, **kwargs) -> None:
         dump/13901.json dump/14901.json ...
 
     """
-    fdb = FirestoreDB()
     collection = kwargs.get("collection")
 
     for json_file in kwargs.get("json_files"):
         json_file_path = AnyPath(json_file)
         doc_id = kwargs.get("doc_id", json_file_path.stem) or json_file_path.stem
         logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
-        fdb.upload_document(collection, doc_id, json_file_path)
+        firestore.db.upload_document(collection, doc_id, json_file_path)
 
 
 @cli_main.command()
@@ -131,13 +130,12 @@ def get(click_ctx, *args, **kwargs) -> None:
     \b
     $ cloudpmc-proto-firestore-loader get --collection "article_instances"  13901 14901 ...
     """
-    fdb = FirestoreDB()
     collection = kwargs.get("collection")
     for doc_id in kwargs.get("doc_ids"):
         info = f"retrieving  document from collection={collection} with doc_id={doc_id}"
         logger.info(info)
 
-        doc_dict = fdb.get_document(collection, doc_id)
+        doc_dict = firestore.db.get_document(collection, doc_id)
         if doc_dict is not None:
             log_debug_doc_dict(click_ctx, doc_dict)
             json_file = f"{doc_id}.json"
@@ -180,7 +178,7 @@ def get(click_ctx, *args, **kwargs) -> None:
 @click.argument("conditions", nargs=-1, required=True)
 @click.pass_context
 @cli_try_except(ERROR_QUERY)
-@docstring_with_params(ops=FS_DB_SUPPORTED_OPS)
+@docstring_with_params(ops=firestore.FS_DB_SUPPORTED_OPS)
 def query(click_ctx, *args, **kwargs) -> None:
     """
     find document(s) in Firestore collection.
@@ -211,7 +209,6 @@ def query(click_ctx, *args, **kwargs) -> None:
 
     List of supported operators: {ops}
     """
-    fdb = FirestoreDB()
     collection: str = kwargs["collection"]
     limit: int = kwargs["limit"]
     order_by: str = kwargs["orderby"]
@@ -219,7 +216,7 @@ def query(click_ctx, *args, **kwargs) -> None:
 
     with Timer("query() & fetch"):
         found = 0
-        for doc_id, doc_dict in fdb.query(collection, limit, order_by, conditions):
+        for doc_id, doc_dict in firestore.db.query(collection, limit, order_by, conditions):
             found += 1
             log_debug_doc_dict(click_ctx, doc_dict)
             json_file = f"{doc_id}.json"
@@ -250,11 +247,10 @@ def list_collections(click_ctx, *args, **kwargs) -> None:
     \b
     $ cloudpmc-proto-firestore-loader list-collections
     """
-    fdb = FirestoreDB()
 
     logger.info("List of available collections:")
     with Timer("list collections"):
-        for c in fdb.get_collections():
+        for c in firestore.db.get_collections():
             logger.info(f"\t{c.id}")
             # if size is needed the following addition could be made:
             # size={len(c.get())}, but it is causing the # of reads equal to # of docs.
