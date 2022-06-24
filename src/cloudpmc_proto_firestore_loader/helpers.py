@@ -1,8 +1,10 @@
 import base64
+import copy
 import pprint
 from ast import literal_eval
 from functools import wraps
 from typing import Any, Dict, List, Union
+
 from . import zstd
 from .logger import logger
 
@@ -16,49 +18,52 @@ def bytes_to_str(v):
 ELLIPSIS_STR = " ..."
 
 
-def deep_truncate(o, max_size=56):
+def deep_truncate(d: Dict[str, Any], max_size=56) -> None:
     """
     deep_truncate() helper function iterates over all elements
     of dictionary and truncate values to requested size
     """
-    if isinstance(o, dict):
-        for k, v in o.items():
+    if isinstance(d, dict):
+        for k, v in d.items():
             if isinstance(v, dict):
-                o.update({k: deep_truncate(v)})
+                d.update({k: deep_truncate(v)})
             elif isinstance(v, bytes):
                 new_v = bytes_to_str(v)
                 if len(new_v) > max_size:
                     new_v = new_v[:max_size] + ELLIPSIS_STR
-                o.update({k: new_v})
+                d.update({k: new_v})
             elif isinstance(v, str) and len(v) > max_size:
-                o.update({k: v[:max_size] + ELLIPSIS_STR})
+                d.update({k: v[:max_size] + ELLIPSIS_STR})
 
-    return o
+    return d
 
 
-def decode_b64_fields(o: Dict[str, Any]) -> None:
+def decode_b64_fields(d: Dict[str, Any]) -> None:
     """
     decode_b64_fields() decodes fields with name suffix ".b64" into bytes
     and renames the field to the same name with no suffix.
     """
-    if isinstance(o, dict):
-        for k in list(o):
-            if isinstance(k, str) and k.endswith(".b64") and isinstance(o[k], str):
-                v = o.pop(k)
+    if isinstance(d, dict):
+        for k in list(d):
+            if isinstance(k, str) and k.endswith(".b64") and isinstance(d[k], str):
+                v = d.pop(k)
                 new_k = k.rstrip(".b64")
                 new_v = base64.b64decode(v)
-                o.update({new_k: new_v})
-            elif isinstance(o[k], dict):
-                o.update({k: decode_b64_fields(o[k])})
+                d.update({new_k: new_v})
+            elif isinstance(d[k], dict):
+                d.update({k: decode_b64_fields(d[k])})
 
 
-def decode_b64_compress_fields(o: Dict[str, Any], fields: List[str]) -> None:
+def decode_b64_zcompress_fields(d: Dict[str, Any], fields: List[str]) -> None:
     for f in fields:
-        v = o.pop(f)
+        v = d.pop(f)
         if v is not None:
             v = base64.b64decode(v)
             v_zstd = zstd.compress(v)
             f_zstd = f + "_zstd"
+            d.update({f_zstd: v_zstd})
+
+
 def zdecompress_b64_encode_fields(d: Dict[str, Any], fields: List[str]) -> None:
     for f in fields:
         if f.endswith("_zstd"):
