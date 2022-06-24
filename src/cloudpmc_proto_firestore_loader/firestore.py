@@ -1,4 +1,3 @@
-import copy
 import json
 import os
 import re
@@ -14,8 +13,6 @@ from google.cloud.firestore_v1.types.write import WriteResult
 from .helpers import (
     decode_b64_fields,
     decode_b64_zcompress_fields,
-    deep_truncate,
-    pprinter,
     simplest_type,
     zdecompress_b64_encode_fields,
 )
@@ -69,21 +66,24 @@ class _FirestoreDB:
     @Timer()
     def upload_document(
         self, collection: str, doc_id: str, json_file_path: AnyPath
-    ) -> Optional[WriteResult]:
+    ) -> Tuple[Dict[str, Any], Optional[WriteResult]]:
         with json_file_path.open() as fd:
             doc_dict = json.load(fd)
 
             # decode fields with .b64 suffix in the name of properties
             decode_b64_fields(doc_dict)
+
             # decode header_xml for article_instances collection
             if collection == "article_instances" and "header_xml" in doc_dict:
                 decode_b64_zcompress_fields(doc_dict, ["header_xml"])
-            doc_display = pprinter.pformat(deep_truncate(copy.deepcopy(doc_dict)))
-            logger.info(f"loading content\n{doc_display}")
-            logger.info(f"into collection={collection} with doc_id={doc_id}")
+            logger.info(
+                f"document with doc_id={doc_id} is being loaded "
+                f"into into collection={collection}"
+            )
 
             # load the document into database
-            return self.db.collection(collection).document(doc_id).set(doc_dict)
+            write_result = self.db.collection(collection).document(doc_id).set(doc_dict)
+            return doc_dict, write_result
 
     @Timer()
     def get_document(self, collection: str, doc_id: str) -> Optional[Dict[str, Any]]:
@@ -97,7 +97,6 @@ class _FirestoreDB:
 
         return doc_dict
 
-    @Timer()
     def get_collections(self) -> Generator[CollectionReference, None, None]:
         for c in self.db.collections():
             yield c

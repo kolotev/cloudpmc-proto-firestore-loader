@@ -100,7 +100,8 @@ def load(click_ctx, *args, **kwargs) -> None:
         json_file_path = AnyPath(json_file)
         doc_id = kwargs.get("doc_id", json_file_path.stem) or json_file_path.stem
         logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
-        firestore.db.upload_document(collection, doc_id, json_file_path)
+        doc_dict, _ = firestore.db.upload_document(collection, doc_id, json_file_path)
+        log_debug_doc_dict(click_ctx, doc_dict)
 
 
 @cli_main.command()
