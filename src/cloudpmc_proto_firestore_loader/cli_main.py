@@ -139,11 +139,7 @@ def get(click_ctx, *args, **kwargs) -> None:
         doc_dict = firestore.db.get_document(collection, doc_id)
         if doc_dict is not None:
             log_debug_doc_dict(click_ctx, doc_dict)
-            json_file = f"{doc_id}.json"
-            with open(json_file, "w", encoding="utf-8") as f:
-                json.dump(doc_dict, f, ensure_ascii=False, indent=4, sort_keys=True)
-
-            logger.info(f"document with doc_id={doc_id} was written into {json_file} file.")
+            save_json_doc_dict(click_ctx, doc_dict, doc_id)
 
         else:
             logger.error(
@@ -220,10 +216,8 @@ def query(click_ctx, *args, **kwargs) -> None:
         for doc_id, doc_dict in firestore.db.query(collection, limit, order_by, conditions):
             found += 1
             log_debug_doc_dict(click_ctx, doc_dict)
-            json_file = f"{doc_id}.json"
-            with open(json_file, "w", encoding="utf-8") as f:
-                json.dump(doc_dict, f, ensure_ascii=False, indent=4, sort_keys=True)
-            logger.info(f"document with doc_id={doc_id} was written into {json_file} file.")
+            save_json_doc_dict(click_ctx, doc_dict, doc_id)
+
         logger.info(f"Found {found} document(s) in collection={collection} with limit={limit}")
 
 

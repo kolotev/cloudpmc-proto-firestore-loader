@@ -126,3 +126,10 @@ def log_debug_doc_dict(click_ctx, doc_dict: Dict[str, Any]) -> None:
     if click_ctx.parent._debug:
         doc_for_display = deep_truncate(copy.deepcopy(doc_dict), 64)
         logger.debug("\n{}", pprinter.pformat(doc_for_display))
+
+
+def save_json_doc_dict(click_ctx, doc_dict: Dict[str, Any], doc_id: str) -> None:
+    json_file = f"{doc_id}.json"
+    with open(json_file, "w", encoding="utf-8") as f:
+        json.dump(doc_dict, f, ensure_ascii=False, indent=4, sort_keys=True)
+    logger.info(f"document with doc_id={doc_id} was written into {json_file} file.")
