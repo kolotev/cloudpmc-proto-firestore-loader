@@ -82,7 +82,7 @@ def simplest_type(s: str) -> Union[str, int, float]:
     try:
         if s.lower() in ["y", "yes", "true", "on"]:
             s = "True"
-        if s.lower() in ["n", "no", "false", "off"]:
+        elif s.lower() in ["n", "no", "false", "off"]:
             s = "False"
         return literal_eval(s)
     except Exception:
@@ -113,9 +113,9 @@ def cli_try_except(error_code):
             try:
                 return func(click_ctx, *args, **kwargs)
             except Exception as e:
-                if click_ctx.parent._debug:
+                if click_ctx.parent.arg_debug:
                     logger.exception(e)
-                logger.error(f"{e} type(e)={type(e)}")
+                logger.error(f"{e.__class__.__name__}: {e}")
                 click_ctx.exit(error_code)
 
         return decorated
