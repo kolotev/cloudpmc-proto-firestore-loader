@@ -46,8 +46,9 @@ FS_DB_SUPPORTED_OPS = [
     ">=",
     ">",
     "!=",
-    "array-contains",
-    "array-contains-any",
+    # https://github.com/googleapis/python-firestore/blob/main/google/cloud/firestore_v1/base_query.py#L73,L76
+    "array_contains",
+    "array_contains_any",
     "in",
     "not-in",
 ]
