@@ -122,19 +122,26 @@ class _FirestoreDB:
         for c in self.db.collections():
             yield c
 
-    @Timer()
     def query(
         self, collection: str, limit: int, order_by: str, conditions: List[str]
     ) -> Generator[Tuple[str, Dict[str, Any]], None, None]:
-        query = self.db.collection(collection).limit(limit)
-        query = query.limit(limit)
+        query = self.db.collection(collection)
+        logger.debug(f"collection={collection}")
+
+        if limit:
+            query = query.limit(limit)
+            logger.debug(f"limit={limit}")
 
         for condition in conditions:
             field, op, value = self._parse_condition(condition)
             query = query.where(field, op, value)
+            logger.debug(f"condition {field} {op} {value}")
+            logger.debug(f"type(value)={type(value)}")
 
         if order_by:
             query = query.order_by(order_by)
+            logger.debug(f"order_by=<{order_by}>")
+
 
         for doc in query.stream():
             doc_dict = doc.to_dict()
@@ -160,6 +167,7 @@ class _FirestoreDB:
         value = value.strip()
         value = simplest_type(value)
         field = field.strip()
+
         return (field, op, value)
 
 
