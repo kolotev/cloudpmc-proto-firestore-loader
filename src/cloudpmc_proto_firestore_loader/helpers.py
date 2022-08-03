@@ -84,6 +84,8 @@ def simplest_type(s: str) -> Union[str, int, float]:
             s = "True"
         elif s.lower() in ["n", "no", "false", "off"]:
             s = "False"
+        elif s.lower() in ["none", "null"]:
+            s = "None"
         return literal_eval(s)
     except Exception:
         return s
