@@ -100,8 +100,8 @@ class _FirestoreDB:
             )
 
             # remove unwanted fields:
-            doc_dict.pop("_id")
-            doc_dict.pop("_collection")
+            doc_dict.pop("_id", None)
+            doc_dict.pop("_collection", None)
 
             # load the document into database
             write_result = self.db.collection(_collection).document(_doc_id).set(doc_dict)

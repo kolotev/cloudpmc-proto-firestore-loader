@@ -68,7 +68,7 @@ def decode_b64_zcompress_fields(d: Dict[str, Any], fields: List[str]) -> None:
 def zdecompress_b64_encode_fields(d: Dict[str, Any], fields: List[str]) -> None:
     for f in fields:
         if f.endswith("_zstd"):
-            v = d.pop(f)
+            v = d.pop(f, None)
             if v is not None:
                 v = zstd.decompress(v)
                 d[f.strip("_zstd")] = base64.b64encode(v).decode("ascii")
