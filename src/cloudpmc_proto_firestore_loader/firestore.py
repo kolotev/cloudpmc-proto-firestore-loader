@@ -143,7 +143,7 @@ class _FirestoreDB:
 
     @staticmethod
     def _parse_condition(condition: str) -> Tuple[str, str, Union[str, int, float]]:
-        re_pattern = r"^(.*?)(" f"{'|'.join(FS_DB_SUPPORTED_OPS)}" r")(.*?)$"
+        re_pattern = r"^(\S+)\s*(" f"{'|'.join(FS_DB_SUPPORTED_OPS)}" r")\s*(.*?)$"
         re_search = re.search(re_pattern, condition)
         if re_search:
             field, op, value = re_search.groups()
