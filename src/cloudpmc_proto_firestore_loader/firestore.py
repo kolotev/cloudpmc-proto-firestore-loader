@@ -84,8 +84,6 @@ class _FirestoreDB:
 
             _doc_id = str(_doc_id)
 
-
-
             _collection = collection or doc_dict.get("_collection")
             if not _collection:
                 raise ValueError(
