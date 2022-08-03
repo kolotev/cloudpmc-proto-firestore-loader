@@ -48,7 +48,14 @@ def cli_main(click_ctx, *args, debug=None) -> None:
     "--doc-id",
     type=str,
     help="Document Id in Firestore collection.",
-    required=False,
+)
+@click.option(
+    "--skip-errors",
+    "-s",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="Report and skip individual file loading error.",
 )
 @click.argument(
     "json_files",
@@ -111,13 +118,27 @@ def load(click_ctx, *args, **kwargs) -> None:
 
     """
     collection = kwargs.get("collection")
+    skip_errors = kwargs.get("skip_errors")
 
+    errors_encountered = 0
     for json_file in kwargs.get("json_files"):
         json_file_path = AnyPath(json_file)
         doc_id = kwargs.get("doc_id")
         logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
+        try:
         doc_dict, _ = firestore.db.upload_document(collection, doc_id, json_file_path)
         log_debug_doc_dict(click_ctx, doc_dict)
+        except ValueError as e:
+            errors_encountered += 1
+            if skip_errors:
+                logger.error(f"{e.__class__.__name__}: {e}")
+                continue
+            else:
+                raise e
+
+    if errors_encountered:
+        logger.error(f"Total {errors_encountered} error(s) had been occured.")
+        click_ctx.exit(ERROR_LOAD_ENCOUNTERED)
 
 
 @cli_main.command()
