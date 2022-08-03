@@ -45,14 +45,14 @@ def decode_b64_fields(d: Dict[str, Any]) -> None:
     and renames the field to the same name with no suffix.
     """
     if isinstance(d, dict):
-        for k in list(d):
+        for k in d.keys():
             if isinstance(k, str) and k.endswith(".b64") and isinstance(d[k], str):
                 v = d.pop(k)
                 new_k = k.rstrip(".b64")
                 new_v = base64.b64decode(v)
                 d.update({new_k: new_v})
             elif isinstance(d[k], dict):
-                d.update({k: decode_b64_fields(d[k])})
+                decode_b64_fields(d[k])
 
 
 def decode_b64_zcompress_fields(d: Dict[str, Any], fields: List[str]) -> None:
