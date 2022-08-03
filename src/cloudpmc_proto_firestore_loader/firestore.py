@@ -70,20 +70,43 @@ class _FirestoreDB:
     ) -> Tuple[Dict[str, Any], Optional[WriteResult]]:
         with json_file_path.open() as fd:
             doc_dict = json.load(fd)
-
             # decode fields with .b64 suffix in the name of properties
             decode_b64_fields(doc_dict)
 
+            _doc_id = doc_id or doc_dict.get("_id") or json_file_path.stem
+            if not _doc_id:
+                raise ValueError(
+                    f"Document id is required. `_id` is expected in {json_file_path} "
+                    "or with --doc-id option in command line."
+                )
+            elif isinstance(_doc_id, float):
+                _doc_id = int(_doc_id)
+
+            _doc_id = str(_doc_id)
+
+
+
+            _collection = collection or doc_dict.get("_collection")
+            if not _collection:
+                raise ValueError(
+                    f"Collection name is required. `_collection` is expected in {json_file_path} "
+                    "or with --collection option in command line."
+                )
+
             # decode header_xml for article_instances collection
-            if collection == "article_instances" and "header_xml" in doc_dict:
+            if _collection == "article_instances" and "header_xml" in doc_dict:
                 decode_b64_zcompress_fields(doc_dict, ["header_xml"])
             logger.info(
-                f"document with doc_id={doc_id} is being loaded "
-                f"into into collection={collection}"
+                f"document with doc_id={_doc_id} is being loaded "
+                f"into into collection={_collection}"
             )
 
+            # remove unwanted fields:
+            doc_dict.pop("_id")
+            doc_dict.pop("_collection")
+
             # load the document into database
-            write_result = self.db.collection(collection).document(doc_id).set(doc_dict)
+            write_result = self.db.collection(_collection).document(_doc_id).set(doc_dict)
             return doc_dict, write_result
 
     @Timer()

@@ -42,12 +42,12 @@ def cli_main(click_ctx, *args, debug=None) -> None:
     "--collection",
     type=str,
     help="Firestore collection name.",
-    required=True,
+    required=False,
 )
 @click.option(
-    "--doc_id",
+    "--doc-id",
     type=str,
-    help="Document Id in Firestore collection. Base file name is used if not provided the .",
+    help="Document Id in Firestore collection.",
     required=False,
 )
 @click.argument(
@@ -78,6 +78,18 @@ def load(click_ctx, *args, **kwargs) -> None:
 
     Multiple files/paths are allowed in one run.
 
+    By default the script picks an id of the document from a "_id" field
+    of requested to be loaded json file. If it is not there, the base name
+    of the document is used, if you want to force a specific document id
+    on the loaded document, you can provide --doc-id option with value. But
+    the later one would work only for one document, if multiple documents are
+    provided, the same id will be used for all of them.
+
+    Similar appropach is taken for collection, if "_collection" field is
+    provided in reqestied to be loaded json document, then it is used by
+    default, if it is not there or you want to force a document into specific
+    collection you can specify one with --collection COLLECTION_VALUE option.
+
     Read an "Additional info" section in README.md file if you want to
     avoid confirming your access to Cloud API (Firestore) each time.
 
@@ -102,7 +114,7 @@ def load(click_ctx, *args, **kwargs) -> None:
 
     for json_file in kwargs.get("json_files"):
         json_file_path = AnyPath(json_file)
-        doc_id = kwargs.get("doc_id", json_file_path.stem) or json_file_path.stem
+        doc_id = kwargs.get("doc_id")
         logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
         doc_dict, _ = firestore.db.upload_document(collection, doc_id, json_file_path)
         log_debug_doc_dict(click_ctx, doc_dict)
