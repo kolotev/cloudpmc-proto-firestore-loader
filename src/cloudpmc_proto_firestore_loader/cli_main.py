@@ -18,11 +18,13 @@ ERROR_QUERY = 2
 ERROR_LOAD = 3
 ERROR_LIST_COLLECTIONS = 4
 ERROR_GET = 5
+ERROR_LOAD_ENCOUNTERED = 6
 
 
 @click.group()
 @click.option(
     "--debug",
+    "-d",
     is_flag=True,
     show_default=True,
     default=False,
@@ -40,12 +42,13 @@ def cli_main(click_ctx, *args, debug=None) -> None:
 @cli_main.command()
 @click.option(
     "--collection",
+    "-c",
     type=str,
     help="Firestore collection name.",
-    required=False,
 )
 @click.option(
     "--doc-id",
+    "-i",
     type=str,
     help="Document Id in Firestore collection.",
 )
@@ -126,8 +129,8 @@ def load(click_ctx, *args, **kwargs) -> None:
         doc_id = kwargs.get("doc_id")
         logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
         try:
-        doc_dict, _ = firestore.db.upload_document(collection, doc_id, json_file_path)
-        log_debug_doc_dict(click_ctx, doc_dict)
+            doc_dict, _ = firestore.db.upload_document(collection, doc_id, json_file_path)
+            log_debug_doc_dict(click_ctx, doc_dict)
         except ValueError as e:
             errors_encountered += 1
             if skip_errors:
