@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Union
 
 from . import zstd
 from .logger import logger
+import re
 
 pprinter = pprint.PrettyPrinter(indent=4, depth=2, width=100)
 
@@ -54,12 +55,15 @@ def decode_b64_fields(d: Dict[str, Any]) -> None:
             elif isinstance(d[k], dict):
                 decode_b64_fields(d[k])
 
-
+B64_RE = re.compile("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$")
 def decode_b64_zcompress_fields(d: Dict[str, Any], fields: List[str]) -> None:
     for f in fields:
         v = d.pop(f)
         if v is not None:
-            v = base64.b64decode(v)
+            if B64_RE.match(v):
+                v = base64.b64decode(v)
+            else:
+                v = v.encode()
             v_zstd = zstd.compress(v)
             f_zstd = f + "_zstd"
             d.update({f_zstd: v_zstd})
