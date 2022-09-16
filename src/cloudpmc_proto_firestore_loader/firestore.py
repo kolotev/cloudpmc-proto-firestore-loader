@@ -142,7 +142,6 @@ class _FirestoreDB:
             query = query.order_by(order_by)
             logger.debug(f"order_by=<{order_by}>")
 
-
         for doc in query.stream():
             doc_dict = doc.to_dict()
             zdecompress_b64_encode_fields(doc_dict, ["header_xml_zstd"])
