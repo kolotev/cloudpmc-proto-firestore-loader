@@ -2,13 +2,14 @@ import base64
 import copy
 import json
 import pprint
+import re
 from ast import literal_eval
 from functools import wraps
+from pathlib import Path
 from typing import Any, Dict, List, Union
 
 from . import zstd
 from .logger import logger
-import re
 
 pprinter = pprint.PrettyPrinter(indent=4, depth=2, width=100)
 
@@ -55,7 +56,10 @@ def decode_b64_fields(d: Dict[str, Any]) -> None:
             elif isinstance(d[k], dict):
                 decode_b64_fields(d[k])
 
+
 B64_RE = re.compile("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$")
+
+
 def decode_b64_zcompress_fields(d: Dict[str, Any], fields: List[str]) -> None:
     for f in fields:
         v = d.pop(f)
@@ -135,8 +139,8 @@ def log_debug_doc_dict(click_ctx, doc_dict: Dict[str, Any]) -> None:
         logger.debug("\n{}", pprinter.pformat(doc_for_display))
 
 
-def save_json_doc_dict(click_ctx, doc_dict: Dict[str, Any], doc_id: str) -> None:
-    json_file = f"{doc_id}.json"
-    with open(json_file, "w", encoding="utf-8") as f:
+def save_json_doc_dict(click_ctx, doc_dict: Dict[str, Any], doc_id: str, dst: Path) -> None:
+    json_path = dst / f"{doc_id}.json"
+    with json_path.open("w", encoding="utf-8") as f:
         json.dump(doc_dict, f, ensure_ascii=False, indent=4, sort_keys=True)
-    logger.info(f"document with doc_id={doc_id} was written into {json_file} file.")
+    logger.info(f"document with doc_id={doc_id} was written into {json_path} file.")
