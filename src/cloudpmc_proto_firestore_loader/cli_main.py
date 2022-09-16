@@ -1,3 +1,4 @@
+from pathlib import Path
 from typing import List
 
 import click
@@ -147,9 +148,18 @@ def load(click_ctx, *args, **kwargs) -> None:
 @cli_main.command()
 @click.option(
     "--collection",
+    "-c",
     type=str,
     help="Firestore collection name.",
     required=True,
+)
+@click.option(
+    "--dst",
+    "-t",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    help="Destination folder for json files",
+    default="/tmp",
+    show_default=True,
 )
 @click.argument(
     "doc_ids",
@@ -172,14 +182,16 @@ def get(click_ctx, *args, **kwargs) -> None:
     $ cloudpmc-proto-firestore-loader get --collection "article_instances"  13901 14901 ...
     """
     collection = kwargs.get("collection")
+    dst: Path = kwargs.get("dst")
+
     for doc_id in kwargs.get("doc_ids"):
         info = f"retrieving  document from collection={collection} with doc_id={doc_id}"
         logger.info(info)
 
         doc_dict = firestore.db.get_document(collection, doc_id)
         if doc_dict is not None:
-            log_debug_doc_dict(click_ctx, doc_dict)
-            save_json_doc_dict(click_ctx, doc_dict, doc_id)
+            # log_debug_doc_dict(click_ctx, doc_dict)
+            save_json_doc_dict(click_ctx, doc_dict, doc_id, dst)
 
         else:
             logger.error(
@@ -192,6 +204,7 @@ def get(click_ctx, *args, **kwargs) -> None:
 @cli_main.command()
 @click.option(
     "--collection",
+    "-c",
     type=str,
     help="Firestore collection name.",
     required=True,
@@ -211,6 +224,14 @@ def get(click_ctx, *args, **kwargs) -> None:
         "in ascending order by document ID."
         "You can specify the sort order for your data using this option."
     ),
+)
+@click.option(
+    "--dst",
+    "-t",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    help="Destination folder for json files",
+    default="/tmp",
+    show_default=True,
 )
 @click.argument("conditions", nargs=-1, required=True)
 @click.pass_context
@@ -250,13 +271,14 @@ def query(click_ctx, *args, **kwargs) -> None:
     limit: int = kwargs["limit"]
     order_by: str = kwargs["orderby"]
     conditions: List[str] = kwargs["conditions"]
+    dst: Path = kwargs["dst"]
 
     with Timer("query() & fetch"):
         found = 0
         for doc_id, doc_dict in firestore.db.query(collection, limit, order_by, conditions):
             found += 1
-            log_debug_doc_dict(click_ctx, doc_dict)
-            save_json_doc_dict(click_ctx, doc_dict, doc_id)
+            # log_debug_doc_dict(click_ctx, doc_dict)
+            save_json_doc_dict(click_ctx, doc_dict, doc_id, dst)
 
         logger.info(f"Found {found} document(s) in collection={collection} with limit={limit}")
 
