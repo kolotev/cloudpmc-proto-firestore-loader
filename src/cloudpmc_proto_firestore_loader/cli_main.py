@@ -126,13 +126,13 @@ def load(click_ctx, *args, **kwargs) -> None:
 
     errors_encountered = 0
     for json_file in kwargs.get("json_files"):
-        json_file_path = AnyPath(json_file)
-        doc_id = kwargs.get("doc_id")
-        logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
         try:
+            json_file_path = AnyPath(json_file)
+            doc_id = kwargs.get("doc_id")
+            logger.info(f"processing file - {json_file_path} with doc_id={doc_id}")
             doc_dict, _ = firestore.db.upload_document(collection, doc_id, json_file_path)
             log_debug_doc_dict(click_ctx, doc_dict)
-        except ValueError as e:
+        except Exception as e:
             errors_encountered += 1
             if skip_errors:
                 logger.error(f"{e.__class__.__name__}: {e}")
