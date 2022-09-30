@@ -9,7 +9,7 @@ from google.cloud.firestore_v1.base_document import DocumentSnapshot
 from google.cloud.firestore_v1.collection import CollectionReference
 from google.cloud.firestore_v1.document import DocumentReference
 from google.cloud.firestore_v1.types.write import WriteResult
-
+from google.cloud.firestore_v1._helpers import WriteOption
 from .helpers import (
     decode_b64_fields,
     decode_b64_zcompress_fields,
@@ -148,39 +148,25 @@ class _FirestoreDB:
             yield doc.id, doc_dict
 
     def delete_doc(self, collection: str, doc_id: str) -> bool:
-        coll_ref: CollectionReference = self.db.collection(collection)
-        if not list(coll_ref.limit(1).stream()):
-            logger.warning(f"collection '{collection}' is empty or does not exist.")
-            return False
+        self.db.collection(collection).document(doc_id).delete()
+        logger.info(f"{doc_id} was requested to be deleted")
 
-        doc: DocumentSnapshot = coll_ref.document(doc_id).get()
-        if doc.exists:
-            logger.debug(f"Deleting doc {doc.id} => {doc.to_dict()}")
-            doc.reference.delete()
-            logger.info(f"{doc.id} was deleted")
-            return True
-        else:
-            logger.warning(f"{doc_id} is not present")
-            return False
-
-    def delete_all_docs(self, collection: str, batch_size: int = 100) -> int:
+    def delete_all_docs(self, collection: str, batch_size: int = 10) -> int:
         coll_ref: CollectionReference = self.db.collection(collection)
-        if not list(coll_ref.limit(1).stream()):
-            logger.warning(f"collection '{collection}' is empty or does not exist.")
-            return False
 
         deleted = 0
-        while True:
-            doc = None
-            for doc in coll_ref.limit(batch_size).stream():
-                if doc.exists:
-                    doc.reference.delete()
-                    deleted += 1
-                    logger.info(f"{doc.id} was deleted")
-            if not doc:
-                logger.info(f"no more docs")
-                break
-            logger.info(f"deleted={deleted}")
+        for doc_ref in coll_ref.list_documents(page_size=batch_size):
+            doc_ref.delete()
+            deleted += 1
+            logger.info(f"{doc_ref.id} was deleted")
+            if deleted % batch_size == 0:
+                logger.info(f"{'='*32} deleted={deleted}")
+        else:
+            # no more docs
+            logger.warning(f"collection '{collection}' is empty or does not exist.")
+
+        if deleted:
+            logger.info(f"deleted {deleted} document(s)")
 
         return deleted
 
