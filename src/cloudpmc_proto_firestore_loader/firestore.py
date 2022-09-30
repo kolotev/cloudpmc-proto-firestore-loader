@@ -125,7 +125,7 @@ class _FirestoreDB:
     def query(
         self, collection: str, limit: int, order_by: str, conditions: List[str]
     ) -> Generator[Tuple[str, Dict[str, Any]], None, None]:
-        query = self.db.collection(collection)
+        query: CollectionReference = self.db.collection(collection)
         logger.debug(f"collection={collection}")
 
         if limit:
@@ -146,6 +146,43 @@ class _FirestoreDB:
             doc_dict = doc.to_dict()
             zdecompress_b64_encode_fields(doc_dict, ["header_xml_zstd"])
             yield doc.id, doc_dict
+
+    def delete_doc(self, collection: str, doc_id: str) -> bool:
+        coll_ref: CollectionReference = self.db.collection(collection)
+        if not list(coll_ref.limit(1).stream()):
+            logger.warning(f"collection '{collection}' is empty or does not exist.")
+            return False
+
+        doc: DocumentSnapshot = coll_ref.document(doc_id).get()
+        if doc.exists:
+            logger.debug(f"Deleting doc {doc.id} => {doc.to_dict()}")
+            doc.reference.delete()
+            logger.info(f"{doc.id} was deleted")
+            return True
+        else:
+            logger.warning(f"{doc_id} is not present")
+            return False
+
+    def delete_all_docs(self, collection: str, batch_size: int = 100) -> int:
+        coll_ref: CollectionReference = self.db.collection(collection)
+        if not list(coll_ref.limit(1).stream()):
+            logger.warning(f"collection '{collection}' is empty or does not exist.")
+            return False
+
+        deleted = 0
+        while True:
+            doc = None
+            for doc in coll_ref.limit(batch_size).stream():
+                if doc.exists:
+                    doc.reference.delete()
+                    deleted += 1
+                    logger.info(f"{doc.id} was deleted")
+            if not doc:
+                logger.info(f"no more docs")
+                break
+            logger.info(f"deleted={deleted}")
+
+        return deleted
 
     @staticmethod
     def _parse_condition(condition: str) -> Tuple[str, str, Union[str, int, float]]:

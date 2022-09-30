@@ -20,6 +20,7 @@ ERROR_LOAD = 3
 ERROR_LIST_COLLECTIONS = 4
 ERROR_GET = 5
 ERROR_LOAD_ENCOUNTERED = 6
+ERROR_DELETE = 7
 
 
 @click.group()
@@ -109,7 +110,7 @@ def load(click_ctx, *args, **kwargs) -> None:
     Loading from cloud storage:
 
     \b
-    $ cloudpmc-proto-firestore-loader load --collection "article_instances" \\
+    $ firestore-loader load --collection "collection_name" \\
         gs://ncbi-research-pmc.appspot.com/dump/13901.json \\
         gs://ncbi-research-pmc.appspot.com/dump/14901.json \\
             ...
@@ -117,7 +118,7 @@ def load(click_ctx, *args, **kwargs) -> None:
     Loading from local file system:
 
     \b
-    $ cloudpmc-proto-firestore-loader load --collection "article_instances" \\
+    $ firestore-loader load --collection "collection_name" \\
         dump/13901.json dump/14901.json ...
 
     """
@@ -179,7 +180,7 @@ def get(click_ctx, *args, **kwargs) -> None:
     EXAMPLES
 
     \b
-    $ cloudpmc-proto-firestore-loader get --collection "article_instances"  13901 14901 ...
+    $ firestore-loader get --collection "collection_name"  13901 14901 ...
     """
     collection = kwargs.get("collection")
     dst: Path = kwargs.get("dst")
@@ -251,7 +252,7 @@ def query(click_ctx, *args, **kwargs) -> None:
     EXAMPLES
 
     \b
-    $ cloudpmc-proto-firestore-loader query --collection "article_instances" \\
+    $ firestore-loader query --collection "collection_name" \\
         'pmcid == PMC13901' 'is_oa!=False' ...
 
     Notes:
@@ -302,7 +303,7 @@ def list_collections(click_ctx, *args, **kwargs) -> None:
     EXAMPLES
 
     \b
-    $ cloudpmc-proto-firestore-loader list-collections
+    $ firestore-loader list-collections
     """
 
     logger.info("List of available collections:")
@@ -315,3 +316,75 @@ def list_collections(click_ctx, *args, **kwargs) -> None:
         c
     except NameError:
         logger.warning("\tNo collections found")
+
+
+@cli_main.command()
+@click.option(
+    "--collection",
+    "-c",
+    type=str,
+    help="Firestore collection name.",
+    required=True,
+)
+@click.option(
+    "--skip-errors",
+    "-s",
+    is_flag=True,
+    show_default=True,
+    default=False,
+    help="Report and skip individual deletion error.",
+)
+@click.argument("doc_ids", nargs=-1, required=True)
+@click.pass_context
+@cli_try_except(ERROR_DELETE)
+def delete(click_ctx, *args, **kwargs) -> None:
+    """
+    delete document(s)
+
+    SYNOPSIS
+
+    Delete document(s) in Firestore collection by their document id
+    or all using "*" argument as document id.
+
+    EXAMPLES
+
+    Delete selected documents in a given collection:
+    \b
+    $ firestore-loader delete --collection "collection_name" doc_id1 doc_id2 ...
+
+
+    Delete all documents in a given collection:
+    \b
+    $ firestore-loader delete --collection "collection_name" "*"
+
+
+    NOTES
+
+    To delete all documents from a collection you should specify "*" as
+    `doc_id` argument
+
+    """
+    errors_encountered = 0
+
+    collection: str = kwargs["collection"]
+    doc_ids = kwargs.get("doc_ids")
+    skip_errors = kwargs.get("skip_errors")
+
+    with Timer("delete"):
+        for doc_id in doc_ids:
+            if doc_id == "*":
+                firestore.db.delete_all_docs(collection)
+            else:
+                try:
+                    firestore.db.delete_doc(collection, doc_id)
+                except Exception as e:
+                    errors_encountered += 1
+                    if skip_errors:
+                        logger.error(f"{e.__class__.__name__}: {e}")
+                        continue
+                    else:
+                        raise e
+
+    if errors_encountered:
+        logger.error(f"Total {errors_encountered} error(s) had been occured.")
+        click_ctx.exit(ERROR_LOAD_ENCOUNTERED)
