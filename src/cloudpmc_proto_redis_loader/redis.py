@@ -16,10 +16,10 @@ from cloudpmc_proto_firestore_loader.helpers import (
 from cloudpmc_proto_firestore_loader.logger import logger
 from cloudpmc_proto_firestore_loader.timing import Timer
 
-REDIS_HOST = os.environ.setdefault("REDIS_HOST", "localhost")
-REDIS_PORT = os.environ.setdefault("REDIS_PORT", str(6370))
-REDIS_USER = os.environ.setdefault("REDIS_USER", None)
-REDIS_PASS = os.environ.setdefault("REDIS_PASS", None)
+REDIS_HOST = os.environ.get("REDIS_HOST", "localhost")
+REDIS_PORT = os.environ.get("REDIS_PORT", str(6370))
+REDIS_USER = os.environ.get("REDIS_USER", None)
+REDIS_PASS = os.environ.get("REDIS_PASS", None)
 
 
 class _RedisJsonDB:
