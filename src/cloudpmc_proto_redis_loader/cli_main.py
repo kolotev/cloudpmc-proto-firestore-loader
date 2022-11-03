@@ -255,6 +255,7 @@ def query(click_ctx, *args, **kwargs) -> None:
     $ redis-loader query --index "idx:ai" '@ivip:{1465\\-5411\\/3\\/1\\/61}'
     $ redis-loader query --index "idx:ai" '(@pmcid:{PMC13901})|(@pmcid:{PMC14901})'
     $ redis-loader -d query --index "idx:ai" '@is_oa:{true}'
+    $ redis-loader -d query --index "idx:ai" '*' # all records from index with limit & offset
 
     $ redis-loader -d query --index "idx:jl" '@domain_id:{2492}'
     $ redis-loader -d query --index "idx:jl" '@jtitle:(ANN MED)' # search for docs with ANN and MED
@@ -314,40 +315,6 @@ def query(click_ctx, *args, **kwargs) -> None:
         )
 
 
-# @cli_main.command()
-# @click.pass_context
-# @cli_try_except(ERROR_LIST_COLLECTIONS)
-# def list_collections(click_ctx, *args, **kwargs) -> None:
-#     """
-#     get list of top-level collections from Firestore database.
-
-#     SYNOPSIS
-
-#     Get list of top-level collections from Firestore database.
-
-#     WARNING
-
-#     It is not known if it causing the read operation on all documents
-#     of the collection yet.
-
-#     EXAMPLES
-
-#     \b
-#     $ firestore-loader list-collections
-#     """
-
-#     logger.info("List of available collections:")
-#     with Timer("list collections"):
-#         for c in firestore.db.get_collections():
-#             logger.info(f"\t{c.id}")
-#             # if size is needed the following addition could be made:
-#             # size={len(c.get())}, but it is causing the # of reads equal to # of docs.
-#     try:
-#         c
-#     except NameError:
-#         logger.warning("\tNo collections found")
-
-
 @cli_main.command()
 @click.option(
     "--collection",
@@ -391,7 +358,7 @@ def delete(click_ctx, *args, **kwargs) -> None:
     NOTES
 
     To delete all documents from a collection you should specify "*" as
-    `doc_id` argument
+    `doc_id` argument. Use quotes to avoid shell expansion.
 
     """
     errors_encountered = 0
