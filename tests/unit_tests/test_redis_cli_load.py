@@ -1,9 +1,9 @@
 from click.testing import CliRunner
 
-from cloudpmc_proto_firestore_loader import cli_main
+from cloudpmc_proto_redis_loader import cli_main
 
 
-def test_sync():
+def test_cli_main():
     runner = CliRunner()
     result = runner.invoke(cli_main, ["load", "--help"])
     assert result.exit_code == 0
