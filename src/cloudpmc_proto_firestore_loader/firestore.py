@@ -9,10 +9,10 @@ from google.cloud.firestore_v1.base_document import DocumentSnapshot
 from google.cloud.firestore_v1.collection import CollectionReference
 from google.cloud.firestore_v1.document import DocumentReference
 from google.cloud.firestore_v1.types.write import WriteResult
-from google.cloud.firestore_v1._helpers import WriteOption
+
 from .helpers import (
+    b64_decode_zcompress_fields,
     decode_b64_fields,
-    decode_b64_zcompress_fields,
     simplest_type,
     zdecompress_b64_encode_fields,
 )
@@ -93,7 +93,7 @@ class _FirestoreDB:
 
             # decode header_xml for article_instances collection
             if _collection == "article_instances" and "header_xml" in doc_dict:
-                decode_b64_zcompress_fields(doc_dict, ["header_xml"])
+                b64_decode_zcompress_fields(doc_dict, ["header_xml"])
             logger.info(
                 f"document with doc_id={_doc_id} is being loaded "
                 f"into into collection={_collection}"
@@ -151,14 +151,13 @@ class _FirestoreDB:
         self.db.collection(collection).document(doc_id).delete()
         logger.info(f"{doc_id} was requested to be deleted")
 
-    def delete_all_docs(self, collection: str, batch_size: int = 10) -> int:
+    def delete_all_docs(self, collection: str, batch_size: int = 100) -> int:
         coll_ref: CollectionReference = self.db.collection(collection)
 
         deleted = 0
         for doc_ref in coll_ref.list_documents(page_size=batch_size):
             doc_ref.delete()
             deleted += 1
-            logger.info(f"{doc_ref.id} was deleted")
             if deleted % batch_size == 0:
                 logger.info(f"{'='*32} deleted={deleted}")
         else:
