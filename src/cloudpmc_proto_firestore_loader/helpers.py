@@ -5,8 +5,9 @@ import pprint
 import re
 from ast import literal_eval
 from functools import wraps
+from itertools import chain, islice
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, Iterator, List, Union
 
 from . import zstd
 from .logger import logger
@@ -60,7 +61,7 @@ def decode_b64_fields(d: Dict[str, Any]) -> None:
 B64_RE = re.compile("^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{3}=|[A-Za-z0-9+/]{2}==)?$")
 
 
-def decode_b64_zcompress_fields(d: Dict[str, Any], fields: List[str]) -> None:
+def b64_decode_zcompress_fields(d: Dict[str, Any], fields: List[str]) -> None:
     for f in fields:
         v = d.pop(f)
         if v is not None:
@@ -80,6 +81,16 @@ def zdecompress_b64_encode_fields(d: Dict[str, Any], fields: List[str]) -> None:
             if v is not None:
                 v = zstd.decompress(v)
                 d[f.strip("_zstd")] = base64.b64encode(v).decode("ascii")
+
+
+def b64_decode_zdecompress_fields(d: Dict[str, Any], fields: List[str]) -> None:
+    for f in fields:
+        if f.endswith("_zstd"):
+            v = d.pop(f, None)
+            if v is not None:
+                v = base64.b64decode(v) if B64_RE.match(v) else v.encode()
+                v = zstd.decompress(v)
+                d[f.strip("_zstd")] = v.decode("utf-8")
 
 
 def simplest_type(s: str) -> Union[str, int, float]:
@@ -144,3 +155,9 @@ def save_json_doc_dict(click_ctx, doc_dict: Dict[str, Any], doc_id: str, dst: Pa
     with json_path.open("w", encoding="utf-8") as f:
         json.dump(doc_dict, f, ensure_ascii=False, indent=4, sort_keys=True)
     logger.info(f"document with doc_id={doc_id} was written into {json_path} file.")
+
+
+def chunks(iterable: Iterator[Any], size: int) -> Iterator[chain]:
+    iterator = iter(iterable)
+    for first in iterator:
+        yield chain([first], islice(iterator, size - 1))
