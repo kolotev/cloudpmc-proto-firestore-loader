@@ -71,7 +71,7 @@ def cli_main(click_ctx, *args, debug=None) -> None:
 @cli_try_except(ERROR_LOAD)
 def load(click_ctx, *args, **kwargs) -> None:
     """
-    load JSON_FILES into Firestore database.
+    Load JSON_FILES into Firestore database.
 
     SYNOPSIS
 
@@ -171,11 +171,12 @@ def load(click_ctx, *args, **kwargs) -> None:
 @cli_try_except(ERROR_GET)
 def get(click_ctx, *args, **kwargs) -> None:
     """
-    get document from Firestore collection.
+    Get document from Firestore collection.
 
     SYNOPSIS
 
-    Get document from Firestore collection.
+    Get document from Firestore collection and save it locally to
+    preferred location chosen with --dst option in JSON format.
 
     EXAMPLES
 
@@ -361,7 +362,7 @@ def delete(click_ctx, *args, **kwargs) -> None:
     NOTES
 
     To delete all documents from a collection you should specify "*" as
-    `doc_id` argument
+    `doc_id` argument. Use quotes to avoid shell expansion.
 
     """
     errors_encountered = 0
