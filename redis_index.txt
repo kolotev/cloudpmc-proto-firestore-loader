@@ -1,0 +1,21 @@
+  FT.CREATE idx:ai NOHL NOFREQS NOOFFSETS NOFIELDS
+      ON JSON
+          PREFIX 1 article_instances:
+      SCHEMA
+      $.aiid AS aiid NUMERIC
+      $.aid AS aid NUMERIC
+      $.version AS version NUMERIC
+      $.pmcid AS pmcid TAG
+      $.pmcid_ver AS pmcid_ver TAG
+      $.pmid AS pmid NUMERIC
+      $.doi AS doi TAG
+      $.ivips.* AS ivip TAG
+      $.is_manuscript as is_manuscript TAG
+      $.mid_alternatives.* as mid_alternatives TAG
+
+  FT.CREATE idx:jl NOHL NOOFFSETS NOFIELDS
+      ON JSON
+          PREFIX 1 journals:
+      SCHEMA
+      $.domain_id AS domain_id TAG
+      $.search_string as jtitle TEXT
