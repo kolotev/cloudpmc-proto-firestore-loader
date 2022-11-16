@@ -246,7 +246,7 @@ def query(click_ctx, *args, **kwargs) -> None:
     EXAMPLES
 
     \b
-    $ redis-loader query --index "idx:ai" '@pmcid:{PMC13901} @version:[1 inf]'
+    $ redis-loader query --index "idx:ai" '@pmcid:{PMC13901}' '@version:[1 inf]'
     $ redis-loader query --index "idx:ai" '@aiid:[13901 13901]'
     $ redis-loader query --index "idx:ai" '@pmid:[11250747 11250747]'
     $ redis-loader query --index "idx:ai" '@doi:{10\\.1186\\/bcr272}'
@@ -274,28 +274,9 @@ def query(click_ctx, *args, **kwargs) -> None:
 
     EXPECTED SCHEMAS
 
-    \b
-    FT.CREATE idx:ai NOHL NOFREQS NOOFFSETS NOFIELDS
-        ON JSON
-            PREFIX 1 article_instances:
-        SCHEMA
-        $.aiid AS aiid NUMERIC
-        $.version AS version NUMERIC
-        $.pmcid AS pmcid TAG
-        $.pmcid_ver AS pmcid_ver TAG
-        $.pmid AS pmid NUMERIC
-        $.doi AS doi TAG
-        $.ivips.* AS ivip TAG
-        $.is_oa as is_oa TAG
-    \b
-    FT.CREATE idx:jl NOHL NOFREQS NOOFFSETS NOFIELDS
-        ON JSON
-            PREFIX 1 journals:
-        SCHEMA
-        $.domain_id AS domain_id TAG
-        $.search_string as jtitle TEXT
-        $.search_string as jtitile_tag TAG
-        $.tab as tab TAG
+    See schema at
+    https://bitbucket.ncbi.nlm.nih.gov/projects/PMC/repos/pmc-cloud-prototype/browse/redis_indices.txt
+
     """
     index: str = kwargs["index"]
     limit: int = kwargs["limit"]
@@ -303,7 +284,7 @@ def query(click_ctx, *args, **kwargs) -> None:
     conditions: List[str] = list(kwargs["conditions"])
     dst: Path = kwargs["dst"]
 
-    with Timer("query() & fetch"):
+    with Timer("query()"):
         found = 0
         for doc_id, doc_dict in redis.db.query(index, limit, offset, conditions):
             found += 1
@@ -314,6 +295,90 @@ def query(click_ctx, *args, **kwargs) -> None:
             f"Found {found} document(s) in index={index} with limit={limit} offset={offset}"
         )
 
+@cli_main.command()
+@click.option(
+    "--index",
+    "-i",
+    type=str,
+    help="RedisJSON index name.",
+    required=True,
+)
+@click.option(
+    "--limit",
+    type=int,
+    help="Number of records in result-set.",
+    show_default=True,
+    default=5,
+)
+@click.option(
+    "--offset",
+    type=int,
+    help="offset in result-set.",
+    show_default=True,
+    default=0,
+)
+@click.option(
+    "--dst",
+    "-t",
+    type=click.Path(file_okay=False, dir_okay=True, path_type=Path),
+    help="Destination folder for json files",
+    default="/tmp",
+    show_default=True,
+)
+@click.argument("conditions", nargs=-1, required=True)
+@click.pass_context
+@cli_try_except(ERROR_QUERY)
+# @docstring_with_params(ops=firestore.FS_DB_SUPPORTED_OPS)
+def mquery(click_ctx, *args, **kwargs) -> None:
+    """
+    Find document(s) in RedisJSON based on each condition individually
+    instead of using logical AND for all queries in command line.
+
+    SYNOPSIS
+
+    To find document(s) in RedisJSON you need to have RediSearch module
+    available in your Redis instance with indecies set.
+    When you use this command you need to specify certain values as they are
+    defined in python.
+
+    EXAMPLES
+
+    \b
+    $ redis-loader mquery --index "idx:ai" '@pmcid:{PMC13901}' '@pmcid:{PMC13902}' ...
+
+    Notes:
+
+    Check the syntax of the queries you can make. Mapping of SQL to Redis commands,
+    could help you to prepare your queries
+    https://redis.io/docs/stack/search/reference/query_syntax/#mapping-common-sql-predicates-to-redisearch
+
+    on Fuzzy search queries conslt with
+    # consult with https://redis.io/docs/stack/search/reference/query_syntax/#fuzzy-matching
+
+
+    EXPECTED SCHEMAS
+
+    See schema at
+    https://bitbucket.ncbi.nlm.nih.gov/projects/PMC/repos/pmc-cloud-prototype/browse/redis_indices.txt
+
+    """
+    index: str = kwargs["index"]
+    limit: int = kwargs["limit"]
+    offset: int = kwargs["offset"]
+    conditions: List[str] = list(kwargs["conditions"])
+    dst: Path = kwargs["dst"]
+
+    with Timer("mquery()"):
+        found = 0
+        for condition in conditions:
+            for doc_id, doc_dict in redis.db.query(index, limit, offset, [condition]):
+                found += 1
+                # log_debug_doc_dict(click_ctx, doc_dict)
+                save_json_doc_dict(click_ctx, doc_dict, doc_id, dst)
+
+        logger.info(
+            f"Found {found} document(s) in index={index} with limit={limit} offset={offset}"
+        )
 
 @cli_main.command()
 @click.option(
